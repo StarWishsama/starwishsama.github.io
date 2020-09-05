@@ -1,219 +1,123 @@
 /*
-	Highlights by HTML5 UP
+	Stellar by HTML5 UP
 	html5up.net | @ajlkn
 	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 */
 
 (function($) {
 
-	skel.breakpoints({
-		large: '(max-width: 1680px)',
-		medium: '(max-width: 980px)',
-		small: '(max-width: 736px)',
-		xsmall: '(max-width: 480px)'
-	});
+	var	$window = $(window),
+		$body = $('body'),
+		$main = $('#main');
 
-	$(function() {
+	// Breakpoints.
+		breakpoints({
+			xlarge:   [ '1281px',  '1680px' ],
+			large:    [ '981px',   '1280px' ],
+			medium:   [ '737px',   '980px'  ],
+			small:    [ '481px',   '736px'  ],
+			xsmall:   [ '361px',   '480px'  ],
+			xxsmall:  [ null,      '360px'  ]
+		});
 
-		var	$window = $(window),
-			$body = $('body'),
-			$html = $('html');
+	// Play initial animations on page load.
+		$window.on('load', function() {
+			window.setTimeout(function() {
+				$body.removeClass('is-preload');
+			}, 100);
+		});
 
-		// Disable animations/transitions until the page has loaded.
-			$html.addClass('is-loading');
+	// Nav.
+		var $nav = $('#nav');
 
-			$window.on('load', function() {
-				window.setTimeout(function() {
-					$html.removeClass('is-loading');
-				}, 0);
-			});
+		if ($nav.length > 0) {
 
-		// Touch mode.
-			if (skel.vars.mobile) {
-
-				var $wrapper;
-
-				// Create wrapper.
-					$body.wrapInner('<div id="wrapper" />');
-					$wrapper = $('#wrapper');
-
-					// Hack: iOS vh bug.
-						if (skel.vars.os == 'ios')
-							$wrapper
-								.css('margin-top', -25)
-								.css('padding-bottom', 25);
-
-					// Pass scroll event to window.
-						$wrapper.on('scroll', function() {
-							$window.trigger('scroll');
-						});
-
-				// Scrolly.
-					$window.on('load.hl_scrolly', function() {
-
-						$('.scrolly').scrolly({
-							speed: 1500,
-							parent: $wrapper,
-							pollOnce: true
-						});
-
-						$window.off('load.hl_scrolly');
-
-					});
-
-				// Enable touch mode.
-					$html.addClass('is-touch');
-
-			}
-			else {
-
-				// Scrolly.
-					$('.scrolly').scrolly({
-						speed: 1500
-					});
-
-			}
-
-		// Fix: Placeholder polyfill.
-			$('form').placeholder();
-
-		// Prioritize "important" elements on medium.
-			skel.on('+medium -medium', function() {
-				$.prioritize(
-					'.important\\28 medium\\29',
-					skel.breakpoint('medium').active
-				);
-			});
-
-		// Header.
-			var $header = $('#header'),
-				$headerTitle = $header.find('header'),
-				$headerContainer = $header.find('.container');
-
-			// Make title fixed.
-				if (!skel.vars.mobile) {
-
-					$window.on('load.hl_headerTitle', function() {
-
-						skel.on('-medium !medium', function() {
-
-							$headerTitle
-								.css('position', 'fixed')
-								.css('height', 'auto')
-								.css('top', '50%')
-								.css('left', '0')
-								.css('width', '100%')
-								.css('margin-top', ($headerTitle.outerHeight() / -2));
-
-						});
-
-						skel.on('+medium', function() {
-
-							$headerTitle
-								.css('position', '')
-								.css('height', '')
-								.css('top', '')
-								.css('left', '')
-								.css('width', '')
-								.css('margin-top', '');
-
-						});
-
-						$window.off('load.hl_headerTitle');
-
-					});
-
-				}
-
-			// Scrollex.
-				skel.on('-small !small', function() {
-					$header.scrollex({
-						terminate: function() {
-
-							$headerTitle.css('opacity', '');
-
+			// Shrink effect.
+				$main
+					.scrollex({
+						mode: 'top',
+						enter: function() {
+							$nav.addClass('alt');
 						},
-						scroll: function(progress) {
-
-							// Fade out title as user scrolls down.
-								if (progress > 0.5)
-									x = 1 - progress;
-								else
-									x = progress;
-
-								$headerTitle.css('opacity', Math.max(0, Math.min(1, x * 2)));
-
-						}
+						leave: function() {
+							$nav.removeClass('alt');
+						},
 					});
-				});
 
-				skel.on('+small', function() {
+			// Links.
+				var $nav_a = $nav.find('a');
 
-					$header.unscrollex();
+				$nav_a
+					.scrolly({
+						speed: 1000,
+						offset: function() { return $nav.height(); }
+					})
+					.on('click', function() {
 
-				});
+						var $this = $(this);
 
-		// Main sections.
-			$('.main').each(function() {
+						// External link? Bail.
+							if ($this.attr('href').charAt(0) != '#')
+								return;
 
-				var $this = $(this),
-					$primaryImg = $this.find('.image.primary > img'),
-					$bg,
-					options;
+						// Deactivate all links.
+							$nav_a
+								.removeClass('active')
+								.removeClass('active-locked');
 
-				// No primary image? Bail.
-					if ($primaryImg.length == 0)
-						return;
+						// Activate link *and* lock it (so Scrollex doesn't try to activate other links as we're scrolling to this one's section).
+							$this
+								.addClass('active')
+								.addClass('active-locked');
 
-				// Hack: IE8 fallback.
-					if (skel.vars.IEVersion < 9) {
+					})
+					.each(function() {
 
-						$this
-							.css('background-image', 'url("' + $primaryImg.attr('src') + '")')
-							.css('-ms-behavior', 'url("css/ie/backgroundsize.min.htc")');
+						var	$this = $(this),
+							id = $this.attr('href'),
+							$section = $(id);
 
-						return;
+						// No section for this link? Bail.
+							if ($section.length < 1)
+								return;
 
-					}
+						// Scrollex.
+							$section.scrollex({
+								mode: 'middle',
+								initialize: function() {
 
-				// Create bg and append it to body.
-					$bg = $('<div class="main-bg" id="' + $this.attr('id') + '-bg"></div>')
-						.css('background-image', (
-							'url("assets/css/images/overlay.png"), url("' + $primaryImg.attr('src') + '")'
-						))
-						.appendTo($body);
+									// Deactivate section.
+										if (browser.canUse('transition'))
+											$section.addClass('inactive');
 
-				// Scrollex.
-					options = {
-						mode: 'middle',
-						delay: 200,
-						top: '-10vh',
-						bottom: '-10vh'
-					};
+								},
+								enter: function() {
 
-					if (skel.canUse('transition')) {
+									// Activate section.
+										$section.removeClass('inactive');
 
-						options.init = function() { $bg.removeClass('active'); };
-						options.enter = function() { $bg.addClass('active'); };
-						options.leave = function() { $bg.removeClass('active'); };
+									// No locked links? Deactivate all links and activate this section's one.
+										if ($nav_a.filter('.active-locked').length == 0) {
 
-					}
-					else {
+											$nav_a.removeClass('active');
+											$this.addClass('active');
 
-						$bg
-							.css('opacity', 1)
-							.hide();
+										}
 
-						options.init = function() { $bg.fadeOut(0); };
-						options.enter = function() { $bg.fadeIn(400); };
-						options.leave = function() { $bg.fadeOut(400); };
+									// Otherwise, if this section's link is the one that's locked, unlock it.
+										else if ($this.hasClass('active-locked'))
+											$this.removeClass('active-locked');
 
-					}
+								}
+							});
 
-					$this.scrollex(options);
+					});
 
-			});
+		}
 
-	});
+	// Scrolly.
+		$('.scrolly').scrolly({
+			speed: 1000
+		});
 
 })(jQuery);
